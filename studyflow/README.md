@@ -1,6 +1,6 @@
-# Studyflow
+# Lessgo muss!
 
-Studyflow is a native Android app written in Kotlin with Jetpack Compose. It requires JDK 17 and the Android SDK. There is no React Native, Expo, Node, or EAS dependency.
+Lessgo muss! is a native Android app written in Kotlin with Jetpack Compose. It requires JDK 17 and the Android SDK. There is no React Native, Expo, Node, or EAS dependency.
 
 ## Features
 

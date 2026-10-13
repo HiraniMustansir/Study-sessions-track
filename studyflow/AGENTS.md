@@ -1,4 +1,4 @@
-# Studyflow native Android project
+# Lessgo muss! native Android project
 
 - This is a Kotlin/JDK Android application built with Gradle and Jetpack Compose. Do not add React Native, Expo, Node, JavaScript, or EAS files.
 - Use the Gradle wrapper (`./gradlew`) for builds and tests. The project uses JDK 17 and compiles to JVM 17 bytecode.

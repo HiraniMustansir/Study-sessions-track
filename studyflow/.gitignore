@@ -8,3 +8,4 @@ local.properties
 *.keystore
 captures/
 /.kotlin/
+/app/src/main/res/drawable/ic_launcher_photo.png

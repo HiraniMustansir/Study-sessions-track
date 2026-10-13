@@ -1,6 +1,7 @@
 package com.studyflow.tracker.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -41,13 +43,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.studyflow.tracker.data.StudyMath
 import com.studyflow.tracker.data.StudyRepository
 import com.studyflow.tracker.data.StudyState
+import com.studyflow.tracker.R
 
 private val palette = listOf(0xFFF3A57DL, 0xFF82B8ABL, 0xFF9A9BCBL, 0xFFE5B46CL, 0xFF80A9C9L, 0xFFCF94A4L)
 private val subjectIcons = listOf("book", "calculate", "science", "code", "language", "palette")
@@ -170,8 +176,9 @@ fun SettingsScreen(state: StudyState, repository: StudyRepository, onNotificatio
         }
         Spacer(Modifier.height(56.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("✦", color = AppColors.Orange, fontSize = 30.sp)
-            Text("Studyflow", color = AppColors.Ink, fontSize = 17.sp, fontWeight = FontWeight.Black)
+            Image(painterResource(R.drawable.ic_launcher_photo), contentDescription = "Lessgo muss! logo", modifier = Modifier.size(52.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+            Spacer(Modifier.height(8.dp))
+            Text("Lessgo muss!", color = AppColors.Ink, fontSize = 17.sp, fontWeight = FontWeight.Black)
             Text("Version 1.0", color = AppColors.Muted, fontSize = 11.sp)
             Spacer(Modifier.height(12.dp)); Text("Small steps, steady progress.", color = AppColors.Muted, fontSize = 11.sp)
         }
