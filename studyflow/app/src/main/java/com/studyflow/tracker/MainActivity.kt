@@ -10,10 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.studyflow.tracker.data.StudyRepository
+import com.studyflow.tracker.reminders.DailySummaryScheduler
 
 class MainActivity : ComponentActivity() {
+    private lateinit var repository: StudyRepository
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        repository = StudyRepository(this)
+        DailySummaryScheduler.sync(this, repository)
         setContent { StudyflowApp() }
     }
 }
