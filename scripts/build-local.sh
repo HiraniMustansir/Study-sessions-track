@@ -32,12 +32,19 @@ if [[ "$project_dir" == *'!'* ]]; then
     cp "$project_dir/local.properties" "$stage_dir/local.properties"
   fi
   (cd "$stage_dir" && ./gradlew "${tasks[@]}")
-  apk="$stage_dir/app/build/outputs/apk/debug/app-debug.apk"
-  if [[ -f "$apk" ]]; then
-    mkdir -p "$project_dir/app/build/outputs/apk/debug"
-    cp "$apk" "$project_dir/app/build/outputs/apk/debug/app-debug.apk"
-    echo "APK: $project_dir/app/build/outputs/apk/debug/app-debug.apk"
-  fi
+  for variant in debug release; do
+    task_name="assemble${variant^}"
+    if [[ " ${tasks[*]} " == *"$task_name"* ]]; then
+      apk="$stage_dir/app/build/outputs/apk/$variant/app-$variant.apk"
+      if [[ ! -f "$apk" ]]; then
+        echo "Expected APK was not created: $apk" >&2
+        exit 1
+      fi
+      mkdir -p "$project_dir/app/build/outputs/apk/$variant"
+      cp "$apk" "$project_dir/app/build/outputs/apk/$variant/app-$variant.apk"
+      echo "APK: $project_dir/app/build/outputs/apk/$variant/app-$variant.apk"
+    fi
+  done
 else
   (cd "$project_dir" && ./gradlew "${tasks[@]}")
 fi

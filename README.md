@@ -35,6 +35,9 @@ Install JDK 17 and Android SDK API 36 with Build Tools 35 or later. Set `JAVA_HO
 
 ```bash
 ./scripts/build-local.sh
+./scripts/build-local.sh testDebugUnitTest assembleRelease
 ```
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. It is signed with a local debug key for personal testing, not a release key for store distribution. Keep the same signing key for future updates, or export a backup before reinstalling. The script stages builds in a cache directory because this workspace path contains `!`, which the Kotlin compiler treats as a JAR separator. Android Studio users should open a checkout in a path without `!`.
+The signed release APK is written to `app/build/outputs/apk/release/app-release.apk`. Release signing uses `~/.local/share/lessgomuss/release-key.p12` and `~/.local/share/lessgomuss/signing.properties` on this computer. Both files are outside Git. **Back up both signing files securely**: future releases must use the same key to update an installed release app without uninstalling it. To use another location, set `LESSGOMUSS_SIGNING_PROPERTIES` to the signing properties file's absolute path. The APK itself is not committed.
+
+The default command builds a debug APK for testing. A debug APK has a different signature from the release APK, so Android cannot install the release APK over it. If the debug app contains sessions, export a backup there first, uninstall the debug app, install the release APK, and import the backup. The script stages builds in a cache directory because this workspace path contains `!`, which the Kotlin compiler treats as a JAR separator. Android Studio users should open a checkout in a path without `!`.
