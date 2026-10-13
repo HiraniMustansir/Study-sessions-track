@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -95,7 +96,7 @@ fun SubjectsScreen(state: StudyState, repository: StudyRepository) {
 @Composable
 private fun AddSubjectDialog(onDismiss: () -> Unit, onSave: (String, Long, String) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
-    var color by rememberSaveable { mutableStateOf(palette.first()) }
+    var color by rememberSaveable { mutableLongStateOf(palette.first()) }
     var icon by rememberSaveable { mutableStateOf(subjectIcons.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
