@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import org.json.JSONArray
-import org.json.JSONObject
 
 class StudyRepository(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("lessgomuss_v1", Context.MODE_PRIVATE)
@@ -15,8 +13,8 @@ class StudyRepository(context: Context) {
     private fun update(transform: (StudyState) -> StudyState) {
         val next = transform(state)
         if (next == state) return
+        persist(next)
         state = next
-        preferences.edit().putString("data", encode(next).toString()).apply()
     }
 
     fun start(subjectId: String, now: Long = System.currentTimeMillis()) = update { current ->
@@ -61,43 +59,24 @@ class StudyRepository(context: Context) {
     fun setNotifications(enabled: Boolean) = update { it.copy(settings = it.settings.copy(notificationsEnabled = enabled)) }
     fun setReminderHour(hour: Int) = update { it.copy(settings = it.settings.copy(reminderHour = hour.coerceIn(0, 23))) }
 
+    fun exportBackup(): String = StudyBackupCodec.export(state)
+
+    fun importBackup(raw: String) {
+        require(state.timer == null) { "Finish or discard the active session before importing." }
+        val imported = StudyBackupCodec.import(raw)
+        persist(imported)
+        state = imported
+    }
+
+    private fun persist(next: StudyState) {
+        check(preferences.edit().putString("data", StudyBackupCodec.encode(next).toString()).commit()) {
+            "Could not save study data on this device."
+        }
+    }
+
     private fun load(): StudyState {
         val raw = preferences.getString("data", null) ?: return StudyState()
-        return runCatching { decode(JSONObject(raw)) }.getOrElse { StudyState() }
+        return runCatching { StudyBackupCodec.decode(org.json.JSONObject(raw)) }.getOrElse { StudyState() }
     }
 
-    private fun encode(state: StudyState) = JSONObject().apply {
-        put("subjects", JSONArray().apply { state.subjects.forEach { subject -> put(JSONObject().apply {
-            put("id", subject.id); put("name", subject.name); put("color", subject.color); put("icon", subject.icon)
-        }) } })
-        put("sessions", JSONArray().apply { state.sessions.forEach { session -> put(JSONObject().apply {
-            put("id", session.id); put("subjectId", session.subjectId); put("startedAt", session.startedAt)
-            put("endedAt", session.endedAt); put("durationMs", session.durationMs)
-        }) } })
-        put("timer", state.timer?.let { timer -> JSONObject().apply {
-            put("subjectId", timer.subjectId); put("startedAt", timer.startedAt)
-            put("resumedAt", timer.resumedAt); put("elapsedBeforePauseMs", timer.elapsedBeforePauseMs)
-        } } ?: JSONObject.NULL)
-        put("settings", JSONObject().apply {
-            put("dailyGoalMinutes", state.settings.dailyGoalMinutes)
-            put("notificationsEnabled", state.settings.notificationsEnabled)
-            put("reminderHour", state.settings.reminderHour)
-        })
-    }
-
-    private fun decode(json: JSONObject): StudyState {
-        val subjects = json.getJSONArray("subjects").let { array -> (0 until array.length()).map { i ->
-            array.getJSONObject(i).let { Subject(it.getString("id"), it.getString("name"), it.getLong("color"), it.getString("icon")) }
-        } }
-        val sessions = json.getJSONArray("sessions").let { array -> (0 until array.length()).map { i ->
-            array.getJSONObject(i).let { StudySession(it.getString("id"), it.getString("subjectId"), it.getLong("startedAt"), it.getLong("endedAt"), it.getLong("durationMs")) }
-        } }
-        val timer = json.optJSONObject("timer")?.let {
-            StudyTimer(it.getString("subjectId"), it.getLong("startedAt"), if (it.isNull("resumedAt")) null else it.getLong("resumedAt"), it.getLong("elapsedBeforePauseMs"))
-        }
-        val settings = json.getJSONObject("settings").let {
-            StudySettings(it.getInt("dailyGoalMinutes"), it.getBoolean("notificationsEnabled"), it.getInt("reminderHour"))
-        }
-        return StudyState(subjects, sessions, timer, settings)
-    }
 }

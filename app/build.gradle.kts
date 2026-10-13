@@ -27,7 +27,25 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    sourceSets.getByName("main").res.srcDir(layout.buildDirectory.dir("generated/res/appIcon"))
 }
+
+val localIcon = file("src/main/local-icon/ic_launcher_photo.png")
+val fallbackIcon = file("src/main/icon-fallback/ic_launcher_photo.xml")
+val generatedIcon = layout.buildDirectory.dir("generated/res/appIcon")
+val prepareAppIcon by tasks.registering {
+    inputs.file(if (localIcon.exists()) localIcon else fallbackIcon)
+    outputs.dir(generatedIcon)
+    doLast {
+        val target = generatedIcon.get().asFile.resolve("drawable-nodpi")
+        target.mkdirs()
+        target.listFiles()?.forEach { it.delete() }
+        val source = if (localIcon.exists()) localIcon else fallbackIcon
+        source.copyTo(target.resolve(source.name), overwrite = true)
+    }
+}
+tasks.matching { it.name == "preBuild" || it.name.startsWith("map") && it.name.endsWith("SourceSetPaths") }
+    .configureEach { dependsOn(prepareAppIcon) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
@@ -40,4 +58,5 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

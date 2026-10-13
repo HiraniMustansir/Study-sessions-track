@@ -128,7 +128,15 @@ private fun AddSubjectDialog(onDismiss: () -> Unit, onSave: (String, Long, Strin
 }
 
 @Composable
-fun SettingsScreen(state: StudyState, repository: StudyRepository, onNotificationToggle: (Boolean) -> Unit, onReminderHour: (Int) -> Unit) {
+fun SettingsScreen(
+    state: StudyState,
+    repository: StudyRepository,
+    onNotificationToggle: (Boolean) -> Unit,
+    onReminderHour: (Int) -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+) {
+    var confirmImport by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 24.dp)) {
         ScreenTitle("MAKE IT YOURS", "Settings", "Shape a study routine that fits you.")
         Spacer(Modifier.height(27.dp))
@@ -174,6 +182,26 @@ fun SettingsScreen(state: StudyState, repository: StudyRepository, onNotificatio
             Icon(Icons.Outlined.Info, null, tint = AppColors.Muted, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
             Text("Your sessions are saved on this device. Daily reminders may arrive later than the chosen time due to Android battery settings.", color = AppColors.Muted, fontSize = 11.sp, lineHeight = 17.sp)
         }
+        Spacer(Modifier.height(27.dp))
+        Text("YOUR DATA", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
+        Spacer(Modifier.height(10.dp))
+        WhiteCard(Modifier.fillMaxWidth()) {
+            Text("Keep your study history", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(8.dp))
+            Text("Your subjects, sessions, goal, and reminder settings stay privately on this phone. Save a backup file regularly and copy it to another phone when needed.", color = AppColors.Muted, fontSize = 12.sp, lineHeight = 18.sp)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onExport, enabled = state.timer == null, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = AppColors.Orange)) {
+                Text("Export backup")
+            }
+            Spacer(Modifier.height(6.dp))
+            Button(onClick = { confirmImport = true }, enabled = state.timer == null, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = AppColors.Ink)) {
+                Text("Import backup")
+            }
+            if (state.timer != null) {
+                Spacer(Modifier.height(7.dp))
+                Text("Finish or discard the active session to transfer data.", color = AppColors.Muted, fontSize = 11.sp)
+            }
+        }
         Spacer(Modifier.height(56.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(painterResource(R.drawable.ic_launcher_photo), contentDescription = "Lessgo muss! logo", modifier = Modifier.size(52.dp).clip(CircleShape), contentScale = ContentScale.Crop)
@@ -183,4 +211,11 @@ fun SettingsScreen(state: StudyState, repository: StudyRepository, onNotificatio
             Spacer(Modifier.height(12.dp)); Text("Small steps, steady progress.", color = AppColors.Muted, fontSize = 11.sp)
         }
     }
+    if (confirmImport) ConfirmDialog(
+        "Replace study data?",
+        "Importing a backup replaces all subjects, sessions, and settings currently on this phone. Export this phone's data first if you want to keep it.",
+        "Choose backup",
+        onDismiss = { confirmImport = false },
+        onConfirm = { confirmImport = false; onImport() },
+    )
 }

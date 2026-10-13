@@ -74,7 +74,15 @@ private val tabs = listOf(
 )
 
 @Composable
-fun LessgoMussApp(repository: StudyRepository, onNotificationToggle: (Boolean) -> Unit, onReminderHour: (Int) -> Unit) {
+fun LessgoMussApp(
+    repository: StudyRepository,
+    onNotificationToggle: (Boolean) -> Unit,
+    onReminderHour: (Int) -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    transferMessage: String?,
+    onDismissTransferMessage: () -> Unit,
+) {
     val state = repository.state
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -87,7 +95,7 @@ fun LessgoMussApp(repository: StudyRepository, onNotificationToggle: (Boolean) -
                     1 -> CalendarScreen(state)
                     2 -> InsightsScreen(state)
                     3 -> SubjectsScreen(state, repository)
-                    else -> SettingsScreen(state, repository, onNotificationToggle, onReminderHour)
+                    else -> SettingsScreen(state, repository, onNotificationToggle, onReminderHour, onExport, onImport)
                 }
             }
             Row(Modifier.fillMaxWidth().background(Color.White).padding(top = 8.dp, bottom = 4.dp, start = 5.dp, end = 5.dp)) {
@@ -101,6 +109,12 @@ fun LessgoMussApp(repository: StudyRepository, onNotificationToggle: (Boolean) -
                 }
             }
         }
+        if (transferMessage != null) AlertDialog(
+            onDismissRequest = onDismissTransferMessage,
+            title = { Text("Study data") },
+            text = { Text(transferMessage) },
+            confirmButton = { TextButton(onClick = onDismissTransferMessage) { Text("OK") } },
+        )
     }
 }
 
