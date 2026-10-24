@@ -90,7 +90,7 @@ object StudyBackupCodec {
         require(imported.subjects.map { it.id }.toSet().size == imported.subjects.size) { "Backup has duplicate subjects." }
         require(imported.sessions.all { it.id.isNotBlank() && it.startedAt >= 0 && it.endedAt >= it.startedAt && it.durationMs > 0 }) { "Backup has an invalid session." }
         require(imported.sessions.map { it.id }.toSet().size == imported.sessions.size) { "Backup has duplicate sessions." }
-        require(imported.sessions.all { it.note.length <= 2000 && it.focusRating in 0..5 && it.durationMs <= it.endedAt - it.startedAt }) { "Backup has invalid session details." }
+        require(imported.sessions.all { it.note.length <= 2000 && it.focusRating in 0..5 }) { "Backup has invalid session details." }
         require(imported.tasks.size <= 10000 && imported.tasks.map { it.id }.toSet().size == imported.tasks.size) { "Backup has invalid tasks." }
         require(imported.tasks.all { it.id.isNotBlank() && it.title.isNotBlank() && it.title.length <= 200 && it.estimateMinutes in 5..720 && it.priority in 0..2 && runCatching { java.time.LocalDate.parse(it.dueDate) }.isSuccess }) { "Backup has an invalid task." }
         val settings = imported.settings

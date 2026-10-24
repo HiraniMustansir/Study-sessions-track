@@ -41,11 +41,11 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 object AppColors {
-    val Background = Color(0xFFF7F7F3)
+    val Background = Color(0xFFF4F6F7)
     val Ink = Color(0xFF202A36)
-    val Muted = Color(0xFF818A94)
+    val Muted = Color(0xFF626F7A)
     val Line = Color(0xFFE6E9E7)
-    val Orange = Color(0xFFF07354)
+    val Accent = Color(0xFF187C72)
     val Dark = Color(0xFF202B38)
     val Green = Color(0xFF50A888)
 }
@@ -61,21 +61,21 @@ fun subjectIcon(key: String): ImageVector = when (key) {
 
 @Composable
 fun ScreenTitle(eyebrow: String, title: String, subtitle: String) {
-    Text(eyebrow, color = AppColors.Orange, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
+    Text(eyebrow, color = AppColors.Accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
     Spacer(Modifier.height(6.dp))
-    Text(title, color = AppColors.Ink, fontSize = 29.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
+    Text(title, color = AppColors.Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp)
     Spacer(Modifier.height(4.dp))
     Text(subtitle, color = AppColors.Muted, fontSize = 13.sp)
 }
 
 @Composable
 fun SectionTitle(title: String, modifier: Modifier = Modifier) {
-    Text(title, modifier = modifier, color = AppColors.Ink, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.4).sp)
+    Text(title, modifier = modifier, color = AppColors.Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.4).sp)
 }
 
 @Composable
 fun WhiteCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier = modifier, color = Color.White, shape = RoundedCornerShape(21.dp), shadowElevation = 0.dp) {
+    Surface(modifier = modifier, color = Color.White, shape = RoundedCornerShape(16.dp), shadowElevation = 0.dp) {
         Column(Modifier.padding(16.dp), content = content)
     }
 }
@@ -94,7 +94,7 @@ fun StatTile(icon: ImageVector, label: String, value: String, tint: Color, modif
             Icon(icon, contentDescription = null, tint = AppColors.Ink, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(13.dp))
-        Text(value, color = AppColors.Ink, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text(value, color = AppColors.Ink, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         Text(label, color = AppColors.Muted, fontSize = 12.sp)
     }
 }
@@ -106,12 +106,17 @@ fun SessionItem(session: StudySession, subject: Subject?, trailing: @Composable 
         Row(verticalAlignment = Alignment.CenterVertically) {
             SubjectAvatar(subject)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(subject?.name ?: "Deleted subject", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(subject?.name ?: "Archived subject", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(start.format(DateTimeFormatter.ofPattern("h:mm a · MMM d")), color = AppColors.Muted, fontSize = 11.sp)
             }
-            Text(StudyMath.formatDuration(session.durationMs), color = AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+            Text(StudyMath.formatDuration(session.durationMs), color = AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             trailing?.invoke()
         }
+        if (session.note.isNotBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Text(session.note, color = AppColors.Muted, fontSize = 12.sp)
+        }
+        if (session.focusRating > 0) Text("Focus ${session.focusRating}/5", color = AppColors.Accent, fontSize = 11.sp)
     }
 }
 
@@ -119,9 +124,9 @@ fun SessionItem(session: StudySession, subject: Subject?, trailing: @Composable 
 fun EmptyCard(title: String, message: String) {
     WhiteCard(Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(10.dp))
-        Text("✦", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = AppColors.Orange, fontSize = 27.sp)
+        Text("✦", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = AppColors.Accent, fontSize = 27.sp)
         Spacer(Modifier.height(8.dp))
-        Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = AppColors.Ink, fontWeight = FontWeight.ExtraBold)
+        Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = AppColors.Ink, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(4.dp))
         Text(message, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = AppColors.Muted, fontSize = 12.sp, lineHeight = 17.sp)
         Spacer(Modifier.height(10.dp))
@@ -129,7 +134,7 @@ fun EmptyCard(title: String, message: String) {
 }
 
 @Composable
-fun ThinProgress(fraction: Float, color: Color = AppColors.Orange) {
+fun ThinProgress(fraction: Float, color: Color = AppColors.Accent) {
     Box(Modifier.fillMaxWidth().height(8.dp).background(Color(0xFFF1F2EF), RoundedCornerShape(5.dp))) {
         Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(8.dp).background(color, RoundedCornerShape(5.dp)))
     }

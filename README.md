@@ -6,11 +6,16 @@ The app is written in Kotlin with Jetpack Compose and JDK 17. The Android projec
 
 ## What it does
 
-- Start, pause, resume, finish, or discard a study session. A running timer survives app restarts.
-- Organize time by subject, add subjects, and set a daily study goal.
-- Review daily totals and session counts, a monthly calendar with each day's sessions, and weekly and monthly insights including longest session, average study time, and subject breakdown.
-- Optionally receive a local daily summary notification at a chosen evening hour. Android battery settings may delay it.
-- Export and import all subjects, finished sessions, goal, and reminder settings as a JSON backup.
+Version 2 adds a daily task planner, focus blocks, learning notes and focus ratings, manual study logging, richer weekly insights, searchable history, and flexible recurring reminders. The redesigned interface uses a quieter teal palette and five main screens: Today, Plan, Insights, Calendar, and Settings.
+
+- **Plan:** create subject-linked tasks with due dates, priorities, and estimates; launch linked focus sessions and track invested time.
+- **Focus:** choose an open timer or a 15/25/50/90 minute block. Pause, resume, finish, or discard. Running and paused timers survive app restarts.
+- **Reflect:** save session notes and an optional 1–5 focus rating; log study completed away from the timer.
+- **Understand:** calendar, history search, weekly/monthly charts, subject totals, custom daily/weekly goals, comparable-week trends, goal days, streak records, and study-start patterns.
+- **Remind:** any-time daily summaries, multiple weekday-specific start/goal/task reminders, optional quiet hours, and focus-block alerts. Android can delay these battery-friendly local alarms.
+- **Keep:** export/import private JSON backups, including existing v1 backups. All data stays on-device.
+
+See [the v2 changelog](CHANGELOG.md) for full behavior and limitations. Signed APK downloads are kept in [releases](releases/).
 
 ## Data
 
@@ -23,11 +28,15 @@ The local record remains across ordinary restarts and updates to **this same app
 1. Finish or discard an active timer. Open **Settings → Export backup** and choose where to save the `.json` file.
 2. Copy that file to a computer, USB drive, or another phone. A copy left only on the original phone will be lost with that phone. Keep at least one extra copy and export again regularly.
 3. Install Lessgo muss! on the new phone, transfer the file there, then open **Settings → Import backup** and select it. The calendar and insights rebuild from the imported sessions.
-4. Check the subject list and several days in the calendar before deleting the old phone's data. Import **replaces** the new phone's existing subjects, sessions, and settings; it does not merge them. Export the new phone first if it already has sessions.
+4. Check the subject list and several days in the calendar before deleting the old phone's data. Import **replaces** the new phone's existing subjects, sessions, tasks, and settings; it does not merge them. Export the new phone first if it already has sessions.
 
 The backup file is readable JSON. Keep it private; anyone with a copy can see the study history. You can store the copy offline. The APK itself contains no personal session history. Your personal portrait is ignored by Git and is not included in the repository; a checkout without that local image uses the included vector icon.
 
 **Earlier builds:** This version uses Android app ID `com.lessgomuss.tracker`. Earlier builds used a different ID, so they are separate apps and their private data cannot be read automatically by this version. If an older build already contains sessions, keep it installed; a one-time migration build would be needed to export that data.
+
+### Upgrade from version 1
+
+Export a backup in v1 before installing the new APK. The signed v2 release uses the same app ID and local release key and is designed to update the earlier signed release in place. Existing on-device history migrates automatically, so an in-place update normally does not need an import. If moving to a fresh installation, use **Settings → Import backup** and select the v1 JSON file. Import replaces all existing data; do it before creating new v2 tasks if you need the old backup. New exports use v2 format and cannot be imported into v1.
 
 ## Build
 

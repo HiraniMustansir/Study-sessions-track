@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
         repository = StudyRepository(this)
         DailySummaryScheduler.sync(this, repository)
         setContent {
-            LessgoMussApp(repository, ::toggleNotifications, ::changeReminderHour,
+            LessgoMussApp(repository, ::toggleNotifications,
                 onExport = { exportDocument.launch("lessgo-muss-backup-${LocalDate.now()}.json") },
                 onImport = { importDocument.launch(arrayOf("*/*")) },
                 transferMessage = transferMessage,
@@ -89,8 +89,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun changeReminderHour(hour: Int) {
-        repository.setReminderHour(hour)
-        DailySummaryScheduler.sync(this, repository)
-    }
 }

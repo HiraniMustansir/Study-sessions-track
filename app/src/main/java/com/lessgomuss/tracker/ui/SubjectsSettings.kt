@@ -67,8 +67,8 @@ fun SubjectsScreen(state: StudyState, repository: StudyRepository) {
         ScreenTitle("STAY ORGANIZED", "Your subjects", "Track where your time goes.")
         Spacer(Modifier.height(25.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("${state.subjects.size} ${if (state.subjects.size == 1) "subject" else "subjects"}", Modifier.weight(1f), color = AppColors.Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-            Button(onClick = { adding = true }, colors = ButtonDefaults.buttonColors(containerColor = AppColors.Orange), shape = RoundedCornerShape(12.dp)) { Icon(Icons.Outlined.Add, null); Text("Add subject", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold) }
+            Text("${state.subjects.size} ${if (state.subjects.size == 1) "subject" else "subjects"}", Modifier.weight(1f), color = AppColors.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Button(onClick = { adding = true }, colors = ButtonDefaults.buttonColors(containerColor = AppColors.Accent), shape = RoundedCornerShape(12.dp)) { Icon(Icons.Outlined.Add, null); Text("Add subject", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
         }
         Spacer(Modifier.height(15.dp))
         if (state.subjects.isEmpty()) EmptyCard("Make your first subject", "Create a subject to keep each study session organized.")
@@ -77,7 +77,7 @@ fun SubjectsScreen(state: StudyState, repository: StudyRepository) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SubjectAvatar(subject, 51.dp)
                     Column(Modifier.weight(1f).padding(start = 13.dp)) {
-                        Text(subject.name, color = AppColors.Ink, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(subject.name, color = AppColors.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                         val sessions = state.sessions.filter { it.subjectId == subject.id }
                         Text("${StudyMath.formatDuration(StudyMath.totalMs(sessions))} total · ${sessions.size} ${if (sessions.size == 1) "session" else "sessions"}", color = AppColors.Muted, fontSize = 11.sp)
                     }
@@ -87,8 +87,8 @@ fun SubjectsScreen(state: StudyState, repository: StudyRepository) {
             Spacer(Modifier.height(10.dp))
         }
         Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth().background(Color(0xFFFFF0E8), RoundedCornerShape(16.dp)).padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Info, null, tint = AppColors.Orange, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
+        Row(Modifier.fillMaxWidth().background(Color(0xFFE6F2EE), RoundedCornerShape(16.dp)).padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Info, null, tint = AppColors.Accent, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
             Text("Use subjects for courses, topics, or different kinds of self-study.", color = Color(0xFF9A765F), fontSize = 12.sp, lineHeight = 17.sp)
         }
     }
@@ -106,23 +106,23 @@ private fun AddSubjectDialog(onDismiss: () -> Unit, onSave: (String, Long, Strin
     var icon by rememberSaveable { mutableStateOf(subjectIcons.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New subject", fontWeight = FontWeight.ExtraBold) },
+        title = { Text("New subject", fontWeight = FontWeight.SemiBold) },
         text = {
             Column {
                 OutlinedTextField(name, { if (it.length <= 28) name = it }, label = { Text("Subject name") }, placeholder = { Text("e.g. Physics") }, singleLine = true)
-                Spacer(Modifier.height(18.dp)); Text("COLOR", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.height(18.dp)); Text("COLOR", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(9.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    palette.forEach { item -> Box(Modifier.size(34.dp).background(Color(item), RoundedCornerShape(11.dp)).clickable { color = item }, contentAlignment = Alignment.Center) { if (color == item) Text("✓", color = Color.White, fontWeight = FontWeight.ExtraBold) } }
+                    palette.forEach { item -> Box(Modifier.size(34.dp).background(Color(item), RoundedCornerShape(11.dp)).clickable { color = item }, contentAlignment = Alignment.Center) { if (color == item) Text("✓", color = Color.White, fontWeight = FontWeight.SemiBold) } }
                 }
-                Spacer(Modifier.height(18.dp)); Text("ICON", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.height(18.dp)); Text("ICON", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(9.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    subjectIcons.forEach { item -> Box(Modifier.size(38.dp).background(if (icon == item) Color(0xFFFFF0E8) else AppColors.Background, RoundedCornerShape(10.dp)).clickable { icon = item }, contentAlignment = Alignment.Center) { Icon(subjectIcon(item), item, tint = if (icon == item) AppColors.Orange else AppColors.Muted, modifier = Modifier.size(21.dp)) } }
+                    subjectIcons.forEach { item -> Box(Modifier.size(38.dp).background(if (icon == item) Color(0xFFE6F2EE) else AppColors.Background, RoundedCornerShape(10.dp)).clickable { icon = item }, contentAlignment = Alignment.Center) { Icon(subjectIcon(item), item, tint = if (icon == item) AppColors.Accent else AppColors.Muted, modifier = Modifier.size(21.dp)) } }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(name, color, icon) }) { Text("Create", color = AppColors.Orange) } },
+        confirmButton = { TextButton(onClick = { onSave(name, color, icon) }) { Text("Create", color = AppColors.Accent) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
@@ -132,7 +132,6 @@ fun SettingsScreen(
     state: StudyState,
     repository: StudyRepository,
     onNotificationToggle: (Boolean) -> Unit,
-    onReminderHour: (Int) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
 ) {
@@ -140,57 +139,16 @@ fun SettingsScreen(
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 24.dp)) {
         ScreenTitle("MAKE IT YOURS", "Settings", "Shape a study routine that fits you.")
         Spacer(Modifier.height(27.dp))
-        Text("DAILY TARGET", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
-        Spacer(Modifier.height(10.dp))
-        WhiteCard(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(42.dp).background(Color(0xFFFFF0E8), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Flag, null, tint = AppColors.Orange) }
-                Column(Modifier.padding(start = 12.dp)) { Text("Daily study goal", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold); Text("Currently ${StudyMath.formatDuration(state.settings.dailyGoalMinutes * 60_000L)} per day", color = AppColors.Muted, fontSize = 11.sp) }
-            }
-            Spacer(Modifier.height(19.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(60, 120, 180, 240, 300).forEach { minutes ->
-                    Box(Modifier.weight(1f).background(if (state.settings.dailyGoalMinutes == minutes) AppColors.Orange else AppColors.Background, RoundedCornerShape(10.dp)).clickable { repository.setGoal(minutes) }.padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
-                        Text("${minutes / 60}h", color = if (state.settings.dailyGoalMinutes == minutes) Color.White else AppColors.Muted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-        }
+        RoutineSettings(state, repository, onNotificationToggle)
         Spacer(Modifier.height(27.dp))
-        Text("NOTIFICATIONS", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
+        Text("YOUR DATA", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp)
         Spacer(Modifier.height(10.dp))
         WhiteCard(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(42.dp).background(Color(0xFFE9F2EE), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Notifications, null, tint = AppColors.Green) }
-                Column(Modifier.weight(1f).padding(start = 12.dp)) { Text("Daily summary", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold); Text("Your time and sessions at the end of the day", color = AppColors.Muted, fontSize = 11.sp, lineHeight = 16.sp) }
-                Switch(checked = state.settings.notificationsEnabled, onCheckedChange = onNotificationToggle)
-            }
-            if (state.settings.notificationsEnabled) {
-                Spacer(Modifier.height(17.dp)); Text("SEND AT", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-                Spacer(Modifier.height(11.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(19, 20, 21, 22).forEach { hour ->
-                        Box(Modifier.weight(1f).background(if (state.settings.reminderHour == hour) Color(0xFFFFF0E8) else AppColors.Background, RoundedCornerShape(9.dp)).clickable { onReminderHour(hour) }.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
-                            Text("${hour - 12}:00 PM", color = if (state.settings.reminderHour == hour) AppColors.Orange else AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(17.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            Icon(Icons.Outlined.Info, null, tint = AppColors.Muted, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
-            Text("Your sessions are saved on this device. Daily reminders may arrive later than the chosen time due to Android battery settings.", color = AppColors.Muted, fontSize = 11.sp, lineHeight = 17.sp)
-        }
-        Spacer(Modifier.height(27.dp))
-        Text("YOUR DATA", color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
-        Spacer(Modifier.height(10.dp))
-        WhiteCard(Modifier.fillMaxWidth()) {
-            Text("Keep your study history", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Keep your study history", color = AppColors.Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text("Your subjects, sessions, goal, and reminder settings stay privately on this phone. Save a backup file regularly and copy it to another phone when needed.", color = AppColors.Muted, fontSize = 12.sp, lineHeight = 18.sp)
+            Text("Your subjects, tasks, sessions, notes, goals, and reminders stay privately on this phone. Save a backup file regularly and copy it to another phone when needed.", color = AppColors.Muted, fontSize = 12.sp, lineHeight = 18.sp)
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onExport, enabled = state.timer == null, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = AppColors.Orange)) {
+            Button(onClick = onExport, enabled = state.timer == null, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = AppColors.Accent)) {
                 Text("Export backup")
             }
             Spacer(Modifier.height(6.dp))
@@ -206,8 +164,8 @@ fun SettingsScreen(
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(painterResource(R.drawable.ic_launcher_photo), contentDescription = "Lessgo muss! logo", modifier = Modifier.size(52.dp).clip(CircleShape), contentScale = ContentScale.Crop)
             Spacer(Modifier.height(8.dp))
-            Text("Lessgo muss!", color = AppColors.Ink, fontSize = 17.sp, fontWeight = FontWeight.Black)
-            Text("Version 1.0", color = AppColors.Muted, fontSize = 11.sp)
+            Text("Lessgo muss!", color = AppColors.Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text("Version 2.0", color = AppColors.Muted, fontSize = 11.sp)
             Spacer(Modifier.height(12.dp)); Text("Small steps, steady progress.", color = AppColors.Muted, fontSize = 11.sp)
         }
     }

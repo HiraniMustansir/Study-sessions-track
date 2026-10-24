@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +55,10 @@ fun CalendarScreen(state: StudyState) {
     val selected = LocalDate.parse(selectedKey)
     val monthSessions = state.sessions.filter { YearMonth.from(StudyMath.dayOf(it)) == month }
     val daysStudied = monthSessions.map(StudyMath::dayOf).distinct().size
-    val selectedSessions = StudyMath.sessionsOn(state, selected)
+    var query by rememberSaveable { mutableStateOf("") }
+    val selectedSessions = if (query.isBlank()) StudyMath.sessionsOn(state, selected) else state.sessions.filter { session ->
+        session.note.contains(query.trim(), ignoreCase = true) || state.subjects.find { it.id == session.subjectId }?.name?.contains(query.trim(), ignoreCase = true) == true
+    }.sortedByDescending { it.endedAt }
     val offset = month.atDay(1).dayOfWeek.value % 7
     val days = List(offset) { 0 } + (1..month.lengthOfMonth()).toList()
     val padded = days + List((7 - days.size % 7) % 7) { 0 }
@@ -63,19 +67,19 @@ fun CalendarScreen(state: StudyState) {
         ScreenTitle("YOUR CONSISTENCY", "Study calendar", "A little progress, every day.")
         Spacer(Modifier.height(21.dp))
         Row(Modifier.fillMaxWidth().background(AppColors.Dark, RoundedCornerShape(24.dp)).padding(22.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column { Text(StudyMath.formatDuration(StudyMath.totalMs(monthSessions)), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black); Text("this month", color = Color(0xFFBAC5CE), fontSize = 11.sp) }
+            Column { Text(StudyMath.formatDuration(StudyMath.totalMs(monthSessions)), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("in selected month", color = Color(0xFFBAC5CE), fontSize = 11.sp) }
             Spacer(Modifier.width(31.dp))
-            Column { Text("$daysStudied", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black); Text("days studied", color = Color(0xFFBAC5CE), fontSize = 11.sp) }
+            Column { Text("$daysStudied", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("days studied", color = Color(0xFFBAC5CE), fontSize = 11.sp) }
         }
         Spacer(Modifier.height(18.dp))
         WhiteCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { monthOffset--; selectedKey = month.minusMonths(1).atDay(1).toString() }) { Icon(Icons.Outlined.ChevronLeft, "Previous month") }
-                Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")), Modifier.weight(1f), textAlign = TextAlign.Center, color = AppColors.Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")), Modifier.weight(1f), textAlign = TextAlign.Center, color = AppColors.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 IconButton(onClick = { monthOffset++; selectedKey = month.plusMonths(1).atDay(1).toString() }) { Icon(Icons.Outlined.ChevronRight, "Next month") }
             }
             Spacer(Modifier.height(11.dp))
-            Row(Modifier.fillMaxWidth()) { listOf("S", "M", "T", "W", "T", "F", "S").forEach { Text(it, Modifier.weight(1f), textAlign = TextAlign.Center, color = AppColors.Muted, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold) } }
+            Row(Modifier.fillMaxWidth()) { listOf("S", "M", "T", "W", "T", "F", "S").forEach { Text(it, Modifier.weight(1f), textAlign = TextAlign.Center, color = AppColors.Muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) } }
             Spacer(Modifier.height(10.dp))
             padded.chunked(7).forEach { week ->
                 Row(Modifier.fillMaxWidth()) {
@@ -93,7 +97,7 @@ fun CalendarScreen(state: StudyState) {
                                     else -> Color.Transparent
                                 }
                                 Box(Modifier.size(35.dp).background(heat, RoundedCornerShape(12.dp)).clickable { selectedKey = day.toString() }, contentAlignment = Alignment.Center) {
-                                    Text("$number", color = if (isSelected) Color.White else if (day == LocalDate.now()) AppColors.Orange else AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("$number", color = if (isSelected) Color.White else if (day == LocalDate.now()) AppColors.Accent else AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -108,14 +112,17 @@ fun CalendarScreen(state: StudyState) {
             }
         }
         Spacer(Modifier.height(27.dp))
-        SectionTitle(selected.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")))
+        OutlinedTextField(query, { query = it.take(100) }, label = { Text("Search all history by subject or notes") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(16.dp))
+        SectionTitle(if (query.isBlank()) selected.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")) else "Search results")
         Spacer(Modifier.height(6.dp))
         Text("${StudyMath.formatDuration(StudyMath.totalMs(selectedSessions))} studied  ·  ${selectedSessions.size} ${if (selectedSessions.size == 1) "session" else "sessions"}", color = AppColors.Muted, fontSize = 12.sp)
         Spacer(Modifier.height(14.dp))
         if (selectedSessions.isEmpty()) EmptyCard("A fresh page", "No study sessions were recorded on this day.")
-        else selectedSessions.forEach { session ->
+        else selectedSessions.take(100).forEach { session ->
             SessionItem(session, state.subjects.find { it.id == session.subjectId }); Spacer(Modifier.height(9.dp))
         }
+        if (selectedSessions.size > 100) Text("Showing the most recent 100 results. Refine your search to find older sessions.", color = AppColors.Muted, fontSize = 12.sp)
     }
 }
 
@@ -141,10 +148,13 @@ fun InsightsScreen(state: StudyState) {
         }
     }
     val maxBar = bars.maxOfOrNull { StudyMath.totalMs(it.second) }?.coerceAtLeast(60 * 60_000) ?: 60 * 60_000L
-    val subjectTotals = state.subjects.map { subject -> subject to StudyMath.totalMs(sessions.filter { it.subjectId == subject.id }) }.filter { it.second > 0 }.sortedByDescending { it.second }
+    val insightSubjects = state.subjects + sessions.map { it.subjectId }.distinct().filter { id -> state.subjects.none { it.id == id } }.map { com.lessgomuss.tracker.data.Subject(it, "Archived subject", 0xFF94A3B8, "book") }
+    val subjectTotals = insightSubjects.map { subject -> subject to StudyMath.totalMs(sessions.filter { it.subjectId == subject.id }) }.filter { it.second > 0 }.sortedByDescending { it.second }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 24.dp)) {
         ScreenTitle("THE BIG PICTURE", "Your insights", "See how your focus adds up.")
+        Spacer(Modifier.height(16.dp))
+        DeeperInsights(state)
         Spacer(Modifier.height(21.dp))
         Row(Modifier.fillMaxWidth().background(Color(0xFFEDEFEA), RoundedCornerShape(15.dp)).padding(4.dp)) {
             listOf(false to "This week", true to "This month").forEach { (value, label) ->
@@ -155,15 +165,15 @@ fun InsightsScreen(state: StudyState) {
         }
         Spacer(Modifier.height(17.dp))
         Column(Modifier.fillMaxWidth().background(AppColors.Dark, RoundedCornerShape(24.dp)).padding(22.dp)) {
-            Icon(Icons.Outlined.QueryStats, null, tint = Color(0xFFF1AD8C), modifier = Modifier.size(30.dp))
+            Icon(Icons.Outlined.QueryStats, null, tint = Color(0xFFA9DDD0), modifier = Modifier.size(30.dp))
             Spacer(Modifier.height(19.dp))
-            Text("TOTAL FOCUS TIME", color = Color(0xFFB2BEC7), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.7.sp)
-            Text("%.1fh".format(total / 3_600_000.0), color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Black)
+            Text("TOTAL FOCUS TIME", color = Color(0xFFB2BEC7), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.7.sp)
+            Text("%.1fh".format(total / 3_600_000.0), color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Bold)
             Text("Across ${sessions.size} ${if (sessions.size == 1) "session" else "sessions"} · $activeDays active ${if (activeDays == 1) "day" else "days"}", color = Color(0xFFB2BEC7), fontSize = 12.sp)
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Outlined.EmojiEvents, "Longest session", StudyMath.formatDuration(longest), Color(0xFFFFF0E8), Modifier.weight(1f))
+            StatTile(Icons.Outlined.EmojiEvents, "Longest session", StudyMath.formatDuration(longest), Color(0xFFE6F2EE), Modifier.weight(1f))
             StatTile(Icons.Outlined.QueryStats, "Active-day average", StudyMath.formatDuration(if (activeDays > 0) total / activeDays else 0), Color(0xFFE8F2ED), Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
@@ -177,7 +187,7 @@ fun InsightsScreen(state: StudyState) {
                         Text(if (ms > 0) "%.1fh".format(ms / 3_600_000.0) else "", color = AppColors.Muted, fontSize = 10.sp)
                         Spacer(Modifier.height(7.dp))
                         Box(Modifier.weight(1f).fillMaxWidth().background(Color(0xFFF6F5F1), RoundedCornerShape(8.dp)), contentAlignment = Alignment.BottomCenter) {
-                            if (ms > 0) Box(Modifier.fillMaxWidth().fillMaxHeight((ms.toFloat() / maxBar).coerceIn(0.06f, 1f)).background(if (label == (if (monthView) "W${(today.dayOfMonth - 1) / 7 + 1}" else today.format(DateTimeFormatter.ofPattern("EE")))) AppColors.Orange else Color(0xFFEAB69D), RoundedCornerShape(8.dp)))
+                            if (ms > 0) Box(Modifier.fillMaxWidth().fillMaxHeight((ms.toFloat() / maxBar).coerceIn(0.06f, 1f)).background(if (label == (if (monthView) "W${(today.dayOfMonth - 1) / 7 + 1}" else today.format(DateTimeFormatter.ofPattern("EE")))) AppColors.Accent else Color(0xFFEAB69D), RoundedCornerShape(8.dp)))
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(label, color = AppColors.Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -203,9 +213,9 @@ fun InsightsScreen(state: StudyState) {
             Spacer(Modifier.height(8.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth().background(Color(0xFFFFF0E6), RoundedCornerShape(18.dp)).padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().background(Color(0xFFE6F2EE), RoundedCornerShape(18.dp)).padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("🔥", fontSize = 23.sp); Spacer(Modifier.width(12.dp))
-            Column { Text("${StudyMath.streak(state)} day current streak", color = AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold); Text("Every session is a step forward.", color = Color(0xFF9B7D68), fontSize = 11.sp) }
+            Column { Text("${StudyMath.streak(state)} day current streak", color = AppColors.Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold); Text("Every session is a step forward.", color = Color(0xFF9B7D68), fontSize = 11.sp) }
         }
     }
 }
