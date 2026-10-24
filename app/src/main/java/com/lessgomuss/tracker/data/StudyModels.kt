@@ -12,17 +12,47 @@ data class StudySession(
     val startedAt: Long,
     val endedAt: Long,
     val durationMs: Long,
+    val note: String = "",
+    val focusRating: Int = 0,
+    val taskId: String? = null,
 )
 data class StudyTimer(
     val subjectId: String,
     val startedAt: Long,
     val resumedAt: Long?,
     val elapsedBeforePauseMs: Long,
+    val targetMinutes: Int = 0,
+    val taskId: String? = null,
+    val note: String = "",
+)
+data class StudyTask(
+    val id: String,
+    val title: String,
+    val subjectId: String,
+    val dueDate: String,
+    val estimateMinutes: Int = 25,
+    val priority: Int = 1,
+    val completed: Boolean = false,
+)
+data class StudyReminder(
+    val id: String,
+    val kind: String = "start",
+    val hour: Int = 9,
+    val minute: Int = 0,
+    val weekdays: Set<Int> = (1..7).toSet(),
+    val enabled: Boolean = true,
 )
 data class StudySettings(
     val dailyGoalMinutes: Int = 180,
     val notificationsEnabled: Boolean = false,
     val reminderHour: Int = 21,
+    val reminderMinute: Int = 0,
+    val weeklyGoalMinutes: Int = 900,
+    val focusMinutes: Int = 25,
+    val quietEnabled: Boolean = false,
+    val quietStartHour: Int = 22,
+    val quietEndHour: Int = 7,
+    val reminders: List<StudyReminder> = emptyList(),
 )
 data class StudyState(
     val subjects: List<Subject> = listOf(
@@ -33,6 +63,7 @@ data class StudyState(
     val sessions: List<StudySession> = emptyList(),
     val timer: StudyTimer? = null,
     val settings: StudySettings = StudySettings(),
+    val tasks: List<StudyTask> = emptyList(),
 )
 
 object StudyMath {

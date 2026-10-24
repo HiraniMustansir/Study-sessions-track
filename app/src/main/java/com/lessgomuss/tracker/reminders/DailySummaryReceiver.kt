@@ -13,72 +13,76 @@ import android.content.pm.PackageManager
 import android.os.Build
 import com.lessgomuss.tracker.MainActivity
 import com.lessgomuss.tracker.R
-import com.lessgomuss.tracker.data.StudyMath
-import com.lessgomuss.tracker.data.StudyRepository
-import java.time.Instant
+import com.lessgomuss.tracker.data.*
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.ZonedDateTime
 
 object DailySummaryScheduler {
-    private const val REQUEST_CODE = 2101
-    private const val EXTRA_DAY = "summary_day"
+    private fun pending(context: Context, id: String, kind: String = "", day: String = ""): PendingIntent =
+        PendingIntent.getBroadcast(context, 0, Intent(context, DailySummaryReceiver::class.java)
+            .setAction("com.lessgomuss.reminder.$id").putExtra("kind", kind).putExtra("day", day),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     fun sync(context: Context, repository: StudyRepository) {
-        val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val pending = pendingIntent(context, LocalDate.now())
-        alarmManager.cancel(pending)
-        if (!repository.state.settings.notificationsEnabled) return
-
-        val hour = repository.state.settings.reminderHour
-        val now = LocalDateTime.now()
-        var target = LocalDate.now().atTime(hour, 0)
-        if (!target.isAfter(now)) target = target.plusDays(1)
-        val whenMs = target.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, whenMs, pendingIntent(context, target.toLocalDate()))
+        val alarms = context.getSystemService(AlarmManager::class.java)
+        val prefs = context.getSharedPreferences("reminder_alarms", Context.MODE_PRIVATE)
+        prefs.getStringSet("ids", emptySet())!!.forEach { alarms.cancel(pending(context, it)) }
+        val ids = mutableSetOf<String>()
+        val state = repository.state
+        val settings = state.settings
+        if (settings.notificationsEnabled) {
+            val reminders = listOf(StudyReminder("summary", "summary", settings.reminderHour, settings.reminderMinute)) + settings.reminders
+            val now = ZonedDateTime.now()
+            reminders.filter { it.enabled }.forEach { reminder ->
+                StudyInsights.nextReminder(reminder, settings, now)?.let { target ->
+                    val id = "scheduled-${reminder.id}"
+                    alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target.toInstant().toEpochMilli(), pending(context, id, reminder.kind, target.toLocalDate().toString()))
+                    ids.add(id)
+                }
+            }
+            state.timer?.takeIf { it.resumedAt != null && it.targetMinutes > 0 }?.let { timer ->
+                val remaining = timer.targetMinutes * 60_000L - StudyMath.elapsed(timer, System.currentTimeMillis())
+                if (remaining > 0) {
+                    alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + remaining, pending(context, "focus", "focus", timer.startedAt.toString()))
+                    ids.add("focus")
+                }
+            }
+        }
+        prefs.edit().putStringSet("ids", ids).apply()
     }
-
-    private fun pendingIntent(context: Context, day: LocalDate): PendingIntent =
-        PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE,
-            Intent(context, DailySummaryReceiver::class.java).putExtra(EXTRA_DAY, day.toString()),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-    fun day(intent: Intent): LocalDate = runCatching {
-        LocalDate.parse(intent.getStringExtra(EXTRA_DAY))
-    }.getOrDefault(LocalDate.now())
 }
 
 class DailySummaryReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val repository = StudyRepository(context)
-        if (!repository.state.settings.notificationsEnabled) return
-        val day = DailySummaryScheduler.day(intent)
-        val sessions = StudyMath.sessionsOn(repository.state, day)
-        val body = if (sessions.isEmpty()) {
-            "No sessions logged today. A little study time still counts."
-        } else {
-            val count = sessions.size
-            "You studied for ${StudyMath.formatDuration(StudyMath.totalMs(sessions))} across $count ${if (count == 1) "session" else "sessions"}. Nice work!"
+        val state = repository.state
+        if (!state.settings.notificationsEnabled) return
+        val kind = intent.getStringExtra("kind") ?: return
+        val day = runCatching { LocalDate.parse(intent.getStringExtra("day")) }.getOrDefault(LocalDate.now())
+        val sessions = StudyMath.sessionsOn(state, day)
+        val total = StudyMath.totalMs(sessions)
+        val due = state.tasks.count { !it.completed && it.dueDate <= day.toString() }
+        val timer = state.timer
+        val validFocus = timer != null && timer.resumedAt != null && timer.startedAt.toString() == intent.getStringExtra("day") &&
+            StudyMath.elapsed(timer, System.currentTimeMillis()) >= timer.targetMinutes * 60_000L
+        val message = when (kind) {
+            "focus" -> if (validFocus) "Focus block complete" to "Take a short break when you're ready. Your timer keeps running until you pause or finish." else null
+            "goal" -> if (total < state.settings.dailyGoalMinutes * 60_000L && timer == null) "A little more focus" to "${StudyMath.formatDuration(state.settings.dailyGoalMinutes * 60_000L - total)} left to reach your daily goal." else null
+            "plan" -> if (due > 0) "Your study plan" to "$due unfinished ${if (due == 1) "task is" else "tasks are"} due. Choose one small next step." else null
+            "start" -> if (timer == null) "Time to make progress" to "Choose a subject, pick one task, and start a focus block." else null
+            "summary" -> "Your study day at a glance" to "${StudyMath.formatDuration(total)} studied · ${sessions.size} sessions · $due tasks due."
+            else -> null
         }
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(NotificationChannel("daily_summary", "Daily study summary", NotificationManager.IMPORTANCE_DEFAULT))
-        if (Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            val openApp = PendingIntent.getActivity(
-                context, 2102, Intent(context, MainActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-            val notification = Notification.Builder(context, "daily_summary")
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("Your study day at a glance")
-                .setContentText(body)
-                .setStyle(Notification.BigTextStyle().bigText(body))
-                .setContentIntent(openApp)
-                .setAutoCancel(true)
-                .build()
-            manager.notify(2101, notification)
+        if (message != null && !StudyInsights.isQuiet(ZonedDateTime.now().hour, state.settings)) {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            val channel = if (kind == "focus") "focus_blocks" else "study_routine"
+            manager.createNotificationChannel(NotificationChannel(channel, if (kind == "focus") "Focus blocks" else "Study routine", NotificationManager.IMPORTANCE_DEFAULT))
+            if (Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                val open = PendingIntent.getActivity(context, 2102, Intent(context, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                manager.notify((intent.action ?: kind).hashCode(), Notification.Builder(context, channel).setSmallIcon(R.drawable.ic_notification)
+                    .setContentTitle(message.first).setContentText(message.second).setStyle(Notification.BigTextStyle().bigText(message.second))
+                    .setContentIntent(open).setAutoCancel(true).build())
+            }
         }
         DailySummaryScheduler.sync(context, repository)
     }
@@ -86,8 +90,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+        if (intent.action in listOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_MY_PACKAGE_REPLACED))
             DailySummaryScheduler.sync(context, StudyRepository(context))
-        }
     }
 }

@@ -15,9 +15,49 @@ class StudyBackupCodecTest {
         assertEquals(state, StudyBackupCodec.import(StudyBackupCodec.export(state, 123L)))
     }
 
+    @Test fun versionOneBackupMigratesWithoutLosingHistory() {
+        val backup = JSONObject("""{"format":"lessgomuss-backup","version":1,"data":{"subjects":[{"id":"math","name":"Math","color":123,"icon":"book"}],"sessions":[{"id":"old","subjectId":"math","startedAt":1000,"endedAt":61000,"durationMs":60000}],"timer":null,"settings":{"dailyGoalMinutes":120,"notificationsEnabled":true,"reminderHour":20}}}""")
+        val state = StudyBackupCodec.import(backup.toString())
+        assertEquals(120, state.settings.dailyGoalMinutes)
+        assertEquals(20, state.settings.reminderHour)
+        assertEquals(0, state.settings.reminderMinute)
+        assertEquals(60000L, state.sessions.single().durationMs)
+        assertEquals(emptyList<StudyTask>(), state.tasks)
+        assertEquals(state, StudyBackupCodec.import(StudyBackupCodec.export(state)))
+    }
+
+    @Test fun versionTwoRoundTripIncludesPlansNotesAndReminderDays() {
+        val state = StudyState(
+            sessions = listOf(StudySession("s", "mathematics", 1000, 61000, 60000, "Reviewed algebra", 4, "task")),
+            tasks = listOf(StudyTask("task", "Review algebra", "mathematics", "2026-10-24", 50, 2, true)),
+            settings = StudySettings(reminderMinute = 35, weeklyGoalMinutes = 1200, quietEnabled = true,
+                reminders = listOf(StudyReminder("weekday", "goal", 18, 45, setOf(1, 3, 5)))),
+        )
+        assertEquals(state, StudyBackupCodec.import(StudyBackupCodec.export(state)))
+    }
+
+    @Test fun persistedTimerRetainsPausedStateTargetAndTaskAfterRestart() {
+        val state = StudyState(timer = StudyTimer("mathematics", 1000, null, 125000, 25, "task"))
+        val restored = StudyBackupCodec.decode(JSONObject(StudyBackupCodec.encode(state).toString()))
+        assertEquals(state, restored)
+        assertEquals(125000L, StudyMath.elapsed(restored.timer!!, 9000000))
+        val running = state.copy(timer = state.timer!!.copy(resumedAt = 200000))
+        val restarted = StudyBackupCodec.decode(JSONObject(StudyBackupCodec.encode(running).toString()))
+        assertEquals(185000L, StudyMath.elapsed(restarted.timer!!, 260000))
+    }
+
+    @Test fun rejectsMalformedNewPreferencesAndTasks() {
+        listOf(
+            StudyState(settings = StudySettings(reminderMinute = 60)),
+            StudyState(settings = StudySettings(reminders = listOf(StudyReminder("bad", weekdays = emptySet())))),
+            StudyState(tasks = listOf(StudyTask("bad", "Task", "mathematics", "not-a-date"))),
+            StudyState(sessions = listOf(StudySession("bad", "mathematics", 1000, 61000, 60000, focusRating = 9))),
+        ).forEach { state -> assertThrows(IllegalArgumentException::class.java) { StudyBackupCodec.import(StudyBackupCodec.export(state)) } }
+    }
+
     @Test fun rejectsUnsupportedVersionBeforeReplacingAnything() {
         val backup = JSONObject(StudyBackupCodec.export(StudyState()))
-        backup.put("version", 2)
+        backup.put("version", 3)
         assertThrows(IllegalArgumentException::class.java) { StudyBackupCodec.import(backup.toString()) }
     }
 
